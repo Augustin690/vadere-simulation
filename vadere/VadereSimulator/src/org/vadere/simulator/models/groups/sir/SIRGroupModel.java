@@ -188,26 +188,51 @@ public class SIRGroupModel extends AbstractGroupModel<SIRGroup> {
 
 	@Override
 	public void update(final double simTimeInSec) {
-		// check the positions of all pedestrians and switch groups to INFECTED (or REMOVED).
-		DynamicElementContainer<Pedestrian> c = topography.getPedestrianDynamicElements();
+    // check the positions of all pedestrians and switch groups to INFECTED (or REMOVED).
+    DynamicElementContainer<Pedestrian> c = topography.getPedestrianDynamicElements();
 
-		if (c.getElements().size() > 0) {
-			for(Pedestrian p : c.getElements()) {
-				// loop over neighbors and set infected if we are close
-				for(Pedestrian p_neighbor : c.getElements()) {
-					if(p == p_neighbor || getGroup(p_neighbor).getID() != SIRType.ID_INFECTED.ordinal())
-						continue;
-					double dist = p.getPosition().distance(p_neighbor.getPosition());
-					if (dist < attributesSIRG.getInfectionMaxDistance() &&
-							this.random.nextDouble() < attributesSIRG.getInfectionRate()) {
-						SIRGroup g = getGroup(p);
-						if (g.getID() == SIRType.ID_SUSCEPTIBLE.ordinal()) {
-							elementRemoved(p);
-							assignToGroup(p, SIRType.ID_INFECTED.ordinal());
-						}
-					}
-				}
-			}
-		}
-	}
+    if (c.getElements().size() > 0) {
+        // Initialize LinkedCellsGrid to increase neighbor lookup efficiency
+        LinkedCellsGrid<Pedestrian> linkedCellsGrid = new LinkedCellsGrid<Pedestrian>(
+                topography.getBounds().x,
+                topography.getBounds().y,
+                topography.getBounds().width,
+                topography.getBounds().height,
+                attributesSIRG.getInfectionMaxDistance()); // using infection max distance as the grid size if relevant
+
+        // Populate the grid with pedestrians
+        for (Pedestrian p : c.getElements()) {
+            linkedCellsGrid.addObject(p);
+        }
+
+        for (Pedestrian p : c.getElements()) {
+            // Retrieve neighbors from the grid within the infection maximum distance
+            List<Pedestrian> neighbors = linkedCellsGrid.getObjects(p.getPosition(), attributesSIRG.getInfectionMaxDistance());
+
+            for (Pedestrian p_neighbor : neighbors) {
+                if (p == p_neighbor || getGroup(p_neighbor).getID() != SIRType.ID_INFECTED.ordinal()) {
+                    continue;
+                }
+                double dist = p.getPosition().distance(p_neighbor.getPosition());
+                if (dist < attributesSIRG.getInfectionMaxDistance() &&
+                        this.random.nextDouble() < attributesSIRG.getInfectionRate()) {
+                    SIRGroup g = getGroup(p);
+                    if (g.getID() == SIRType.ID_SUSCEPTIBLE.ordinal()) {
+                        elementRemoved(p);
+                        assignToGroup(p, SIRType.ID_INFECTED.ordinal());
+                    }
+                }
+            }
+
+            // Let infected pedestrians recover with a given probability
+            SIRGroup g = getGroup(p);
+            if (g.getID() == SIRType.ID_INFECTED.ordinal() &&
+                    this.random.nextDouble() < attributesSIRG.getRecoveryRate()) {
+                elementRemoved(p);
+                assignToGroup(p, SIRType.ID_REMOVED.ordinal()); // Assuming REMOVED is the correct state
+            }
+        }
+    }
+}
+
 }

@@ -66,7 +66,7 @@ public class DefaultSimulationConfig extends DefaultConfig {
 	private double gridWidth = CONFIG.getDouble("ProjectView.cellWidth");
 	private final double MIN_CELL_WIDTH = CONFIG.getDouble("ProjectView.minCellWidth");
 	private final double MAX_CELL_WIDTH = CONFIG.getDouble("ProjectView.maxCellWidth");
-	private AgentColoring agentColoring = AgentColoring.TARGET;
+	private AgentColoring agentColoring = AgentColoring.GROUP;
 
 	public DefaultSimulationConfig() {
 		super();

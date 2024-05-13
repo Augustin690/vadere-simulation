@@ -27,6 +27,9 @@ public abstract class SimulationModel<T extends DefaultSimulationConfig> extends
 		this.config = config;
 		this.colorMap = new ConcurrentHashMap<>();
 		this.colorMap.put(-1, config.getPedestrianDefaultColor());
+		this.colorMap.put(0, new Color(255, 0, 0));
+		this.colorMap.put(1, new Color(0, 0, 255));
+		this.colorMap.put(2, new Color(255, 0, 255));
 		this.random = new Random();
 	}
 
